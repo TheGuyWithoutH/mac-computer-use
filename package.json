@@ -1,11 +1,50 @@
 {
-  "name": "mac-computer-use",
+  "name": "mac-use",
   "version": "0.1.1",
-  "description": "Unsigned macOS Computer Use MCP server with a native Swift helper.",
+  "description": "macOS Computer Use MCP server with a native Swift helper.",
   "type": "module",
+  "license": "MIT",
+  "author": "Ugo Balducci",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TheGuyWithoutH/mac-computer-use.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TheGuyWithoutH/mac-computer-use/issues"
+  },
+  "homepage": "https://github.com/TheGuyWithoutH/mac-computer-use#readme",
+  "os": [
+    "darwin"
+  ],
+  "main": "./dist/server.js",
+  "types": "./dist/server.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js"
+    },
+    "./backend": {
+      "types": "./dist/backend.d.ts",
+      "import": "./dist/backend.js"
+    },
+    "./contract": {
+      "types": "./dist/contract.d.ts",
+      "import": "./dist/contract.js"
+    }
+  },
   "bin": {
+    "mac-use": "./bin/mac-use.js",
     "mac-computer-use": "./bin/mac-computer-use.js"
   },
+  "files": [
+    "bin/",
+    "dist/**/*.d.ts",
+    "dist/**/*.js",
+    "helper/",
+    "README.md",
+    "RESULT_SCHEMA.md",
+    "SPECS.md"
+  ],
   "scripts": {
     "start": "node --import tsx src/server.ts",
     "start:cli": "COMPUTER_USE_BACKEND=cli node --import tsx src/server.ts",
@@ -13,15 +52,27 @@
     "smoke": "node --import tsx scripts/smoke.ts",
     "observe:input": "swift scripts/observe_input.swift",
     "check": "tsc --noEmit -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
     "test": "node --import tsx --test test/*.test.ts"
+  },
+  "keywords": [
+    "macos",
+    "mcp",
+    "computer-use",
+    "accessibility",
+    "automation"
+  ],
+  "engines": {
+    "node": ">=20"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.5",
-    "tsx": "^4.20.5",
     "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
+    "tsx": "^4.20.5",
     "typescript": "^5.9.2"
   }
 }

@@ -153,6 +153,9 @@ final class OverlayCursorController {
   }
 
   func showActivity(at point: CGPoint, wiggle: Bool = true) {
+    guard isFinitePoint(point) else {
+      return
+    }
     animate(to: point, duration: 0.22, settle: false)
     if wiggle {
       thinkingWiggle()
@@ -165,12 +168,21 @@ final class OverlayCursorController {
   }
 
   func animate(to point: CGPoint, duration: TimeInterval = 0.16) {
+    guard isFinitePoint(point) else {
+      return
+    }
     animate(to: point, duration: duration, settle: true)
   }
 
   private func animate(to point: CGPoint, duration: TimeInterval, settle: Bool) {
+    guard isFinitePoint(point) else {
+      return
+    }
     cancelHide()
     let start = animationStartPoint(for: point)
+    guard isFinitePoint(start) else {
+      return
+    }
     show(at: start)
 
     let dx = point.x - start.x
@@ -198,6 +210,9 @@ final class OverlayCursorController {
   }
 
   func move(to point: CGPoint) {
+    guard isFinitePoint(point) else {
+      return
+    }
     cancelHide()
     let window = ensureWindow()
     window.level = targetWindowLevel
@@ -205,6 +220,9 @@ final class OverlayCursorController {
       view?.cursorAngle = movementRotation(from: currentPoint, to: point)
     }
     let appKitPoint = appKitPoint(fromDisplayPoint: point)
+    guard isFinitePoint(appKitPoint) else {
+      return
+    }
     window.setFrameOrigin(NSPoint(x: appKitPoint.x - hotspot.x, y: appKitPoint.y - hotspot.y))
     if let targetWindowID {
       window.order(.above, relativeTo: Int(targetWindowID))
@@ -310,6 +328,9 @@ final class OverlayCursorController {
   }
 
   private func movementRotation(from start: CGPoint, to end: CGPoint) -> CGFloat {
+    guard isFinitePoint(start), isFinitePoint(end) else {
+      return view?.cursorAngle ?? 0
+    }
     let dx = end.x - start.x
     let dy = end.y - start.y
     guard hypot(dx, dy) >= 1 else {
@@ -352,19 +373,46 @@ final class OverlayCursorController {
 }
 
 func desktopFrame() -> CGRect {
-  NSScreen.screens.map(\.frame).reduce(into: CGRect.null) { result, frame in
+  let screenFrame = NSScreen.screens.map(\.frame).reduce(into: CGRect.null) { result, frame in
     result = result.union(frame)
   }
+  if !screenFrame.isNull, !screenFrame.isEmpty, isFiniteRect(screenFrame) {
+    return screenFrame
+  }
+
+  let mainDisplayFrame = CGDisplayBounds(CGMainDisplayID())
+  if !mainDisplayFrame.isNull, !mainDisplayFrame.isEmpty, isFiniteRect(mainDisplayFrame) {
+    return mainDisplayFrame
+  }
+
+  return CGRect(x: 0, y: 0, width: 1, height: 1)
 }
 
 func appKitPoint(fromDisplayPoint point: CGPoint) -> CGPoint {
+  guard isFinitePoint(point) else {
+    return point
+  }
   let frame = desktopFrame()
   return CGPoint(x: point.x, y: frame.maxY - point.y)
 }
 
 func displayPoint(fromAppKitPoint point: CGPoint) -> CGPoint {
+  guard isFinitePoint(point) else {
+    return point
+  }
   let frame = desktopFrame()
   return CGPoint(x: point.x, y: frame.maxY - point.y)
+}
+
+func isFinitePoint(_ point: CGPoint) -> Bool {
+  point.x.isFinite && point.y.isFinite
+}
+
+func isFiniteRect(_ rect: CGRect) -> Bool {
+  rect.origin.x.isFinite
+    && rect.origin.y.isFinite
+    && rect.size.width.isFinite
+    && rect.size.height.isFinite
 }
 
 struct WindowEntry {

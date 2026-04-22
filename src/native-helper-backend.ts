@@ -2,8 +2,10 @@ import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import readline from "node:readline";
+import { fileURLToPath } from "node:url";
 
 import { createErrorResult, type ComputerUseToolResult } from "./contract.js";
 import type {
@@ -21,6 +23,13 @@ import type {
 import type { HelperRequest, HelperResponse, HelperMethod } from "./helper-protocol.js";
 
 const execFileAsync = promisify(execFile);
+const moduleDir = path.dirname(fileURLToPath(import.meta.url));
+const packageRoot = path.resolve(moduleDir, "..");
+const helperSourceDir = path.join(packageRoot, "helper");
+
+function helperCachePath(): string {
+  return process.env.MAC_USE_CACHE_DIR ?? path.join(os.homedir(), "Library", "Caches", "mac-use");
+}
 
 export class NativeHelperBackend implements ComputerUseBackend {
   private child: ChildProcessWithoutNullStreams | null = null;
@@ -97,7 +106,7 @@ export class NativeHelperBackend implements ComputerUseBackend {
       return this.child;
     }
 
-    const cachePath = path.join(process.cwd(), ".swift-cache");
+    const cachePath = helperCachePath();
     const helperBinary = path.join(cachePath, "ComputerUseNativeHelper");
     const child = spawn(helperBinary, [], {
       cwd: process.cwd(),
@@ -160,15 +169,15 @@ export class NativeHelperBackend implements ComputerUseBackend {
     }
 
     this.helperReady = (async () => {
-      const cachePath = path.join(process.cwd(), ".swift-cache");
+      const cachePath = helperCachePath();
       await fs.mkdir(cachePath, { recursive: true });
       const helperTargets = [
         {
-          source: path.join(process.cwd(), "helper", "ComputerUseNativeHelper.swift"),
+          source: path.join(helperSourceDir, "ComputerUseNativeHelper.swift"),
           binary: path.join(cachePath, "ComputerUseNativeHelper"),
         },
         {
-          source: path.join(process.cwd(), "helper", "WindowCaptureHelper.swift"),
+          source: path.join(helperSourceDir, "WindowCaptureHelper.swift"),
           binary: path.join(cachePath, "WindowCaptureHelper"),
         },
       ];
@@ -182,7 +191,7 @@ export class NativeHelperBackend implements ComputerUseBackend {
         const binaryIsFresh = binaryStat && binaryStat.mtimeMs >= sourceStat.mtimeMs;
         if (!binaryIsFresh) {
           await execFileAsync("swiftc", [target.source, "-o", target.binary], {
-            cwd: process.cwd(),
+            cwd: packageRoot,
             env: {
               ...process.env,
               CLANG_MODULE_CACHE_PATH: cachePath,

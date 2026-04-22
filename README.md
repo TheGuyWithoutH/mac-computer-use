@@ -1,4 +1,4 @@
-# mac-computer-use
+# mac-use
 
 A macOS MCP clone of Codex `@Computer Use`, built to make the same tool interfaces and desktop-control capabilities available to other coding agents.
 
@@ -24,13 +24,19 @@ For most source installs, the host app is whichever app launches the MCP server,
 
 ## Install
 
-From the repo root:
+From npm:
+
+```bash
+npm install -g mac-use
+```
+
+From the repo root for development:
 
 ```bash
 npm install
+npm run build
 npm run check
 npm test
-chmod +x bin/mac-computer-use.js
 ```
 
 ## Permissions Setup
@@ -52,10 +58,16 @@ After changing permissions, fully restart the host app.
 
 ## Run
 
-Recommended path:
+Recommended source-development path:
 
 ```bash
 npm run start
+```
+
+Installed package path:
+
+```bash
+mac-use
 ```
 
 Alternative CLI backend:
@@ -86,20 +98,20 @@ Use the packaged launcher:
 {
   "mcpServers": {
     "computer-use": {
-      "command": "/absolute/path/to/mac-computer-use/bin/mac-computer-use.js"
+      "command": "mac-use"
     }
   }
 }
 ```
 
-If your client prefers explicit runtime invocation:
+If you are running from a local checkout instead of a global install:
 
 ```json
 {
   "mcpServers": {
     "computer-use": {
       "command": "node",
-      "args": ["/absolute/path/to/mac-computer-use/bin/mac-computer-use.js"]
+      "args": ["/absolute/path/to/mac-computer-use/bin/mac-use.js"]
     }
   }
 }
@@ -123,6 +135,7 @@ Under the hood:
 
 - the MCP server is a Node `stdio` process
 - the native behavior lives in [`helper/ComputerUseNativeHelper.swift`](./helper/ComputerUseNativeHelper.swift)
+- the Swift helper is compiled into `~/Library/Caches/mac-use` at runtime, or into `MAC_USE_CACHE_DIR` when that environment variable is set
 - the helper handles accessibility inspection/actions, pointer/keyboard events, screenshots, and the visible second cursor overlay
 
 ## Tool Summary
@@ -248,6 +261,7 @@ See:
 Useful commands:
 
 ```bash
+npm run build
 npm run check
 npm test
 npm run smoke
