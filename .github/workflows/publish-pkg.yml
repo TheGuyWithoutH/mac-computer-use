@@ -1,0 +1,65 @@
+name: Publish package
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "npm dist-tag to publish"
+        required: true
+        default: "latest"
+      dry_run:
+        description: "Run npm publish without publishing"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: Publish npm package
+    runs-on: macos-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Typecheck
+        run: npm run check
+
+      - name: Test
+        run: npm test
+
+      - name: Verify package version is unpublished
+        if: ${{ !inputs.dry_run }}
+        run: |
+          package_version="$(node -p "const pkg = require('./package.json'); `${pkg.name}@${pkg.version}`")"
+          echo "Checking ${package_version}"
+          if npm view "${package_version}" version >/tmp/npm-view.out 2>&1; then
+            echo "${package_version} already exists on npm"
+            exit 1
+          fi
+          if ! grep -q "E404" /tmp/npm-view.out; then
+            cat /tmp/npm-view.out
+            exit 1
+          fi
+
+      - name: Publish package
+        run: npm publish --access public --provenance --tag "${{ inputs.tag }}" ${{ inputs.dry_run && '--dry-run' || '' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
