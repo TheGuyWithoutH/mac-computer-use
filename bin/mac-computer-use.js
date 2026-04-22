@@ -1,3 +1,3 @@
 #!/usr/bin/env node
 
-import "../dist/cli.js";
+import "./mac-use.js";
