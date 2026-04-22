@@ -5,10 +5,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const binDir = path.dirname(fileURLToPath(import.meta.url));
-const serverPath = path.resolve(binDir, "../src/server.ts");
+const projectRoot = path.resolve(binDir, "..");
+const serverPath = path.resolve(projectRoot, "src/server.ts");
+const tsxEntry = path.resolve(projectRoot, "node_modules/tsx/dist/loader.mjs");
 
-const child = spawn(process.execPath, ["--import", "tsx", serverPath], {
+const child = spawn(process.execPath, ["--import", tsxEntry, serverPath], {
   stdio: "inherit",
+  cwd: projectRoot,
   env: process.env,
 });
 
